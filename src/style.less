@@ -1,0 +1,97 @@
+:root {
+  --primary-color: #E6432D;
+  --primary-orange: #FF6B35;
+  --bg-color: #f5f5f5;
+  --card-color: #ffffff;
+  --text-color: #1f1f1f;
+  --sub-text-color: #8a8a8a;
+  --border-color: #ececec;
+  --reader-white: #ffffff;
+  --reader-sand: #f5f0e1;
+  --reader-green: #e8f5e9;
+  --reader-night: #1a1a1a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  min-width: 320px;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button, input {
+  font: inherit;
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--bg-color);
+}
+
+.safe-area {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--sub-text-color);
+}
+
+.night-global {
+  background: #1a1a1a;
+  color: #e5e5e5;
+}
+
+.night-global .page:not(.reader-page),
+.night-global .nav-bar,
+.night-global .page:not(.reader-page) .section,
+.night-global .page:not(.reader-page) .section-box,
+.night-global .page:not(.reader-page) .header,
+.night-global .page:not(.reader-page) .detail-header,
+.night-global .page:not(.reader-page) .menu-list,
+.night-global .page:not(.reader-page) .shelf-wrap,
+.night-global .page:not(.reader-page) .history-list,
+.night-global .page:not(.reader-page) .order-list {
+  background: #1a1a1a !important;
+  color: #e5e5e5 !important;
+}
+
+.night-global .page:not(.reader-page) h2,
+.night-global .page:not(.reader-page) h3,
+.night-global .page:not(.reader-page) h4,
+.night-global .page:not(.reader-page) strong,
+.night-global .page:not(.reader-page) .menu-item,
+.night-global .nav-bar .title {
+  color: #e5e5e5 !important;
+}
+
+.night-global .page:not(.reader-page) .search-box,
+.night-global .page:not(.reader-page) .search-input,
+.night-global .page:not(.reader-page) input {
+  background: #292929 !important;
+  color: #eee !important;
+}
+
+.night-global .van-tabbar {
+  background: #202020;
+  color: #ddd;
+}
