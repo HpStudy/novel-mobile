@@ -431,4 +431,18 @@ watch(() => route.params.id, (id) => {
     }
   }
 }
+@media (min-width: 768px) {
+  .reader-toolbar {
+    left: 50%;
+    right: auto;
+    width: 100%;
+    max-width: var(--app-max-width);
+    transform: translateX(-50%);
+  }
+  .toolbar-row {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
 </style>

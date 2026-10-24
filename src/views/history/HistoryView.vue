@@ -181,4 +181,11 @@ onMounted(loadHistory)
   strong { font-size: 14px; }
   span, small { font-size: 12px; color: #888; }
 }
+@media (min-width: 768px) {
+  .history-list {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 16px 24px 32px;
+  }
+}
 </style>

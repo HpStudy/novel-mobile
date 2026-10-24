@@ -10,7 +10,7 @@ const request = axios.create({
 
 let loginRedirectPending = false
 
-const redirectToLogin = () => {
+export const handleUnauthorized = () => {
   if (loginRedirectPending) return
   loginRedirectPending = true
   const redirect = router.currentRoute.value.fullPath
@@ -33,7 +33,7 @@ request.interceptors.response.use(
   (response) => {
     const res = response.data || {}
     if (res.code === 401 || res.status === 401) {
-      redirectToLogin()
+      handleUnauthorized()
       return Promise.reject(new Error('Unauthorized'))
     }
     if (res.code !== undefined && res.code !== 0 && res.code !== '0') {
@@ -45,7 +45,7 @@ request.interceptors.response.use(
   },
   (error) => {
     if (error?.response?.status === 401) {
-      redirectToLogin()
+      handleUnauthorized()
       return Promise.reject(error)
     }
     const message = error?.response?.data?.message || '请求失败'

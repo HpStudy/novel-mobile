@@ -13,7 +13,17 @@
         </div>
       </div>
       <van-pull-refresh v-model="refreshing" class="right-panel" @refresh="refreshBooks">
-        <van-list v-model:loading="loading" :finished="finished" :immediate-check="false" finished-text="没有更多了" @load="loadBooks">
+        <div class="right-head">
+          <span>{{ activeCategoryName }}</span>
+          <button type="button" @click="viewAll">查看全部</button>
+        </div>
+        <van-list
+          v-model:loading="loading"
+          :finished="finished"
+          :immediate-check="false"
+          :finished-text="books.length ? '没有更多了' : ''"
+          @load="loadBooks"
+        >
           <div v-if="books.length" class="book-grid">
             <BookCard v-for="book in books" :key="book.id" :book="book" @click="$router.push(`/book-detail/${book.id}`)" />
           </div>
@@ -25,13 +35,14 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../../components/NavBar.vue'
 import BookCard from '../../components/BookCard.vue'
 import { getCategoryList, getBooksByCategory } from '../../api/book'
 
 const route = useRoute()
+const router = useRouter()
 const categories = ref([])
 const activeId = ref(null)
 const books = ref([])
@@ -40,6 +51,17 @@ const pageSize = 12
 const loading = ref(false)
 const refreshing = ref(false)
 const finished = ref(false)
+const activeCategoryName = computed(
+  () => categories.value.find((item) => String(item.id) === String(activeId.value))?.name || '分类书籍'
+)
+
+const viewAll = () => {
+  if (!activeId.value) return
+  router.push({
+    path: `/book-list/${activeId.value}`,
+    query: { name: activeCategoryName.value }
+  })
+}
 
 const loadCategories = async () => {
   try {
@@ -146,9 +168,46 @@ onMounted(async () => {
   padding: 12px;
   overflow-y: auto;
 }
+.right-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+  }
+  button {
+    border: 0;
+    padding: 4px 0 4px 10px;
+    color: var(--primary-color);
+    background: transparent;
+    font-size: 12px;
+  }
+}
 .book-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px 10px;
+}
+@media (min-width: 768px) {
+  .left-nav {
+    width: 150px;
+    .nav-item {
+      height: 64px;
+      font-size: 15px;
+    }
+  }
+  .right-panel {
+    padding: 20px 24px;
+  }
+  .right-head span {
+    font-size: 18px;
+  }
+  .book-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 22px 16px;
+  }
 }
 </style>

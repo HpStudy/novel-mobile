@@ -1,58 +1,66 @@
 <template>
-  <van-pull-refresh v-model="refreshing" class="page home-page" @refresh="refreshHome">
-    <div class="header safe-area">
-      <div class="search-box" @click="$router.push('/search')">
-        <van-icon name="search" />
-        <span>搜索小说、作者</span>
-      </div>
-    </div>
-
-    <div class="banner-box">
-      <van-swipe v-if="banners.length" class="my-swipe" :autoplay="3000" indicator-color="#E6432D">
-        <van-swipe-item v-for="banner in banners" :key="banner.id" @click="openBanner(banner)">
-          <img :src="banner.image || banner.imageUrl" :alt="banner.title || '推荐内容'" />
-        </van-swipe-item>
-      </van-swipe>
-      <div v-else class="banner-placeholder">发现下一本好书</div>
-    </div>
-
-    <div class="category-strip">
-      <div class="category-item" v-for="(item, index) in categories" :key="item.id || index" @click="$router.push('/category')">
-        <div class="icon-wrap">{{ item.icon || categoryIcons[index % categoryIcons.length] }}</div>
-        <span>{{ item.name }}</span>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-head">
-        <h3>热门推荐</h3>
-      </div>
-      <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="loadRecommend">
-        <div class="book-list">
-          <BookCard v-for="book in recommendBooks" :key="book.id" :book="book" @click="$router.push(`/book-detail/${book.id}`)" />
+  <div class="page home-page">
+    <van-pull-refresh v-model="refreshing" @refresh="refreshHome">
+      <div class="header safe-area">
+        <div class="search-box" @click="$router.push('/search')">
+          <van-icon name="search" />
+          <span>搜索小说、作者</span>
         </div>
-        <div v-if="loading" class="loading-row"><van-loading size="20" /> <span>加载中...</span></div>
-      </van-list>
-    </div>
-
-    <div class="section">
-      <div class="section-head">
-        <h3>新书上架</h3>
       </div>
-      <van-list
-        v-model:loading="newLoading"
-        :finished="newFinished"
-        finished-text="没有更多了"
-        @load="loadNewBooks"
-      >
-        <div class="book-list">
-          <BookCard v-for="book in newBooks" :key="book.id" :book="book" @click="$router.push(`/book-detail/${book.id}`)" />
+
+      <div class="banner-box">
+        <van-swipe v-if="banners.length" class="my-swipe" :autoplay="3000" indicator-color="#E6432D">
+          <van-swipe-item v-for="banner in banners" :key="banner.id" @click="openBanner(banner)">
+            <img :src="banner.image || banner.imageUrl" :alt="banner.title || '推荐内容'" />
+          </van-swipe-item>
+        </van-swipe>
+        <div v-else class="banner-placeholder">发现下一本好书</div>
+      </div>
+
+      <div class="category-strip">
+        <div
+          class="category-item"
+          v-for="(item, index) in categories"
+          :key="item.id || index"
+          @click="$router.push(item.id ? { path: '/category', query: { categoryId: item.id } } : '/category')"
+        >
+          <div class="icon-wrap">{{ item.icon || categoryIcons[index % categoryIcons.length] }}</div>
+          <span>{{ item.name }}</span>
         </div>
-        <div v-if="newLoading" class="loading-row"><van-loading size="20" /> <span>加载中...</span></div>
-        <div v-if="!newLoading && newFinished && !newBooks.length" class="empty-state">暂无新书</div>
-      </van-list>
-    </div>
-  </van-pull-refresh>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h3>热门推荐</h3>
+        </div>
+        <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="loadRecommend">
+          <div class="book-list">
+            <BookCard v-for="book in recommendBooks" :key="book.id" :book="book" @click="$router.push(`/book-detail/${book.id}`)" />
+          </div>
+          <div v-if="loading" class="loading-row"><van-loading size="20" /> <span>加载中...</span></div>
+        </van-list>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h3>新书上架</h3>
+        </div>
+        <van-list
+          v-model:loading="newLoading"
+          :finished="newFinished"
+          finished-text="没有更多了"
+          @load="loadNewBooks"
+        >
+          <div class="book-list">
+            <BookCard v-for="book in newBooks" :key="book.id" :book="book" @click="$router.push(`/book-detail/${book.id}`)" />
+          </div>
+          <div v-if="newLoading" class="loading-row"><van-loading size="20" /> <span>加载中...</span></div>
+          <div v-if="!newLoading && newFinished && !newBooks.length" class="empty-state">暂无新书</div>
+        </van-list>
+      </div>
+    </van-pull-refresh>
+    <AiChatFab />
+  </div>
 </template>
 
 <script setup>
@@ -60,6 +68,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBannerList, getCategoryList, getRecommendBooks, getNewBooks } from '../../api/book'
 import BookCard from '../../components/BookCard.vue'
+import AiChatFab from '../../components/ai-chat/AiChatFab.vue'
 
 const router = useRouter()
 const banners = ref([])
@@ -289,5 +298,53 @@ onMounted(() => {
   gap: 8px;
   color: #999;
   font-size: 12px;
+}
+@media (min-width: 768px) {
+  .header {
+    padding: 20px 24px 14px;
+  }
+  .search-box {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .banner-box {
+    padding: 0 24px 16px;
+    .my-swipe {
+      height: 280px;
+      border-radius: 20px;
+    }
+    .banner-placeholder {
+      height: 280px;
+      border-radius: 20px;
+      font-size: 28px;
+    }
+  }
+  .category-strip {
+    justify-content: center;
+    gap: 36px;
+    padding: 4px 24px 18px;
+    overflow: visible;
+  }
+  .category-item {
+    width: 64px;
+    min-width: 64px;
+    .icon-wrap {
+      width: 46px;
+      height: 46px;
+      font-size: 20px;
+    }
+  }
+  .section {
+    margin: 16px 24px 0;
+    padding: 20px 20px 24px;
+    border-radius: 14px;
+    .section-head h3 {
+      font-size: 20px;
+    }
+  }
+  .book-list {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 22px 16px;
+  }
 }
 </style>

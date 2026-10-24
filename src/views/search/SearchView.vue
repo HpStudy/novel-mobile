@@ -260,4 +260,21 @@ onMounted(async () => {
   p { margin: 0 0 6px; color: #888; font-size: 12px; }
   span { color: #666; font-size: 12px; line-height: 1.6; }
 }
+@media (min-width: 768px) {
+  .top-bar {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 16px 24px;
+  }
+  .section-box {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 20px 24px;
+  }
+  .result-list {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 24px 32px;
+  }
+}
 </style>

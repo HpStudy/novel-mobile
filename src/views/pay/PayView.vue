@@ -113,4 +113,11 @@ const payNow = async () => {
     border-radius: 12px;
   }
 }
+@media (min-width: 768px) {
+  .pay-box {
+    max-width: 560px;
+    margin: 40px auto;
+    padding: 28px;
+  }
+}
 </style>

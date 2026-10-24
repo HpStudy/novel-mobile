@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const HomeView = () => import('../views/home/HomeView.vue')
 const CategoryView = () => import('../views/category/CategoryView.vue')
+const BookListView = () => import('../views/book-list/BookListView.vue')
 const BookDetailView = () => import('../views/book-detail/BookDetailView.vue')
 const ReaderView = () => import('../views/reader/ReaderView.vue')
 const ShelfView = () => import('../views/shelf/ShelfView.vue')
@@ -16,6 +17,7 @@ const routes = [
   { path: '/', redirect: '/home' },
   { path: '/home', name: 'home', component: HomeView },
   { path: '/category', name: 'category', component: CategoryView },
+  { path: '/book-list/:categoryId?', name: 'book-list', component: BookListView },
   { path: '/book-detail/:id', name: 'book-detail', component: BookDetailView, props: true },
   { path: '/reader/:id', name: 'reader', component: ReaderView, props: true },
   { path: '/shelf', name: 'shelf', component: ShelfView },

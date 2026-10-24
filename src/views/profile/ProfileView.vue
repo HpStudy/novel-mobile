@@ -25,6 +25,7 @@
       <div class="menu-item" @click="$router.push('/history')">阅读历史</div>
       <div class="menu-item" @click="$router.push('/orders')">我的订单</div>
       <div class="menu-item" @click="settingsVisible = true">设置</div>
+      <div v-if="appStore.user.token" class="menu-item logout-entry" @click="handleLogout">退出登录</div>
     </div>
     <van-popup v-model:show="settingsVisible" position="bottom" round>
       <div class="settings-panel">
@@ -44,6 +45,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import { showConfirmDialog, showToast } from 'vant'
 import NavBar from '../../components/NavBar.vue'
 import { useAppStore } from '../../store'
 import { getProfile } from '../../api/user'
@@ -55,6 +57,22 @@ const defaultFontSize = ref(appStore.readingSettings.fontSize)
 
 const saveFontSize = (value) => {
   appStore.updateReaderSettings({ fontSize: value })
+}
+
+const handleLogout = async () => {
+  try {
+    await showConfirmDialog({
+      title: '退出登录',
+      message: '确定要退出当前账号吗？',
+      confirmButtonText: '退出',
+      confirmButtonColor: '#E6432D'
+    })
+  } catch (error) {
+    return
+  }
+  appStore.clearSession()
+  userInfo.value = {}
+  showToast('已退出登录')
 }
 
 onMounted(async () => {
@@ -127,6 +145,14 @@ onMounted(async () => {
   font-size: 15px;
   color: #2d2d2d;
 }
+.logout-entry {
+  margin-top: 16px;
+  border-bottom: 0;
+  border-radius: 12px;
+  background: #fff4f1;
+  color: var(--primary-color);
+  text-align: center;
+}
 .settings-panel {
   padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
   h3 { margin: 0 0 20px; font-size: 17px; }
@@ -137,6 +163,28 @@ onMounted(async () => {
     padding: 14px 0;
     border-top: 1px solid #f2f2f2;
     font-size: 14px;
+  }
+}
+@media (min-width: 768px) {
+  .profile-header {
+    max-width: 760px;
+    margin: 24px auto 0;
+    padding: 24px;
+    border-radius: 16px;
+  }
+  .wallet-card {
+    max-width: 760px;
+    margin: 16px auto 0;
+    padding: 22px 24px;
+  }
+  .menu-list {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 8px 0 40px;
+  }
+  .menu-item {
+    padding: 18px 8px;
+    cursor: pointer;
   }
 }
 </style>

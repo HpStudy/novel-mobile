@@ -269,4 +269,17 @@ onBeforeUnmount(() => window.clearInterval(countdownTimer))
 .code-panel button:disabled {
   opacity: 0.55;
 }
+@media (min-width: 768px) {
+  .login-page {
+    background: var(--bg-color);
+  }
+  .login-box {
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 32px 28px 36px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(20, 30, 50, 0.08);
+  }
+}
 </style>

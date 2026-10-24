@@ -32,7 +32,7 @@
       <ul>
         <li v-for="chapter in chapters" :key="chapter.id" @click="openChapter(chapter)">
           <span>{{ chapter.title || chapter.name }}</span>
-          <em>{{ chapter.isVip || chapter.is_vip || chapter.isFree === 0 ? 'VIP' : '免费' }}</em>
+          <em>{{ chapterLabel(chapter) }}</em>
         </li>
       </ul>
       <div v-if="!chaptersLoading && !chapters.length" class="empty-state">暂无章节</div>
@@ -103,8 +103,18 @@ const toggleCollect = async () => {
   localStorage.setItem('favorite-books', JSON.stringify(favorites))
 }
 
+const isVipChapter = (chapter) => Boolean(
+  chapter?.isVip || chapter?.is_vip || chapter?.vip || chapter?.isFree === 0
+)
+
+const chapterLabel = (chapter) => {
+  if (!isVipChapter(chapter)) return '免费'
+  const price = chapter.price ?? chapter.pricePerChapter ?? book.value.pricePerChapter
+  return price == null || price === '' ? 'VIP' : `VIP ¥${price}`
+}
+
 const openChapter = (chapter) => {
-  if (chapter.isVip || chapter.is_vip || chapter.vip || chapter.isFree === 0) {
+  if (isVipChapter(chapter)) {
     router.push({
       path: `/pay/${chapter.id}`,
       query: {
@@ -341,6 +351,42 @@ onMounted(async () => {
       line-height: 1.7;
       font-size: 13px;
     }
+  }
+}
+@media (min-width: 768px) {
+  .detail-header {
+    max-width: 880px;
+    margin: 24px auto 0;
+    padding: 24px;
+    gap: 24px;
+    border: 1px solid #f2f2f2;
+    border-radius: 16px;
+  }
+  .cover-wrap {
+    width: 150px;
+    height: 205px;
+  }
+  .meta h2 {
+    font-size: 24px;
+  }
+  .action-row {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 20px 0;
+    justify-content: center;
+    button {
+      flex: 0 0 200px;
+    }
+  }
+  .section {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 22px 4px;
+  }
+  .chapter-section ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
   }
 }
 </style>

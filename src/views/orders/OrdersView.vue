@@ -140,4 +140,11 @@ onMounted(loadOrders)
   .order-footer span { color: #999; font-size: 11px; }
   .order-footer strong { color: var(--primary-color); font-size: 14px; }
 }
+@media (min-width: 768px) {
+  .order-list {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 16px 24px 32px;
+  }
+}
 </style>

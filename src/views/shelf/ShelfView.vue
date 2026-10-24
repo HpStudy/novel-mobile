@@ -157,4 +157,11 @@ const withLocalProgress = (book) => {
     font-size: 11px;
   }
 }
+@media (min-width: 768px) {
+  .shelf-wrap {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 24px 16px;
+    padding: 24px 24px 40px;
+  }
+}
 </style>

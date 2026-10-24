@@ -21,7 +21,7 @@ import { useAppStore } from './store'
 
 const route = useRoute()
 const appStore = useAppStore()
-const showTabbar = computed(() => !['reader', 'login', 'pay', 'search', 'book-detail', 'history', 'orders'].includes(route.name))
+const showTabbar = computed(() => !['reader', 'login', 'pay', 'search', 'book-list', 'book-detail', 'history', 'orders'].includes(route.name))
 </script>
 
 <style scoped lang="less">
