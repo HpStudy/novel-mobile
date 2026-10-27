@@ -21,6 +21,8 @@
       </div>
     </div>
 
+    <div class="brightness-mask" :style="brightnessMaskStyle"></div>
+
     <div class="reader-toolbar" v-if="showToolbar">
       <div class="toolbar-row">
         <button @click="fontSize = Math.max(14, fontSize - 1)">A-</button>
@@ -41,13 +43,13 @@
       </div>
     </div>
 
-    <van-popup v-model:show="catalogVisible" position="right" :style="{ width: '70%', height: '100%' }">
+    <van-popup v-model:show="catalogVisible" teleport="body" position="right" :style="{ width: '70%', height: '100%' }">
       <div class="catalog-panel">
         <div class="catalog-header">
           <span>目录</span>
           <span v-if="chapters.length" class="catalog-count">{{ chapters.length }} 章</span>
         </div>
-        <div v-if="catalogLoading || (chapterLoading && !chapters.length)" class="catalog-tip">
+        <div v-if="(catalogLoading || chapterLoading) && !chapters.length" class="catalog-tip">
           <van-loading size="20" />
           <span>目录加载中...</span>
         </div>
@@ -102,8 +104,11 @@ const lineHeight = ref(appStore.readingSettings.lineHeight || 1.8)
 const brightness = ref(appStore.readingSettings.brightness || 100)
 
 const readerStyle = computed(() => ({
-  background: effectiveTheme.value === 'white' ? '#ffffff' : effectiveTheme.value === 'sand' ? '#f5f0e1' : effectiveTheme.value === 'green' ? '#e8f5e9' : '#1a1a1a',
-  filter: `brightness(${brightness.value / 100})`
+  background: effectiveTheme.value === 'white' ? '#ffffff' : effectiveTheme.value === 'sand' ? '#f5f0e1' : effectiveTheme.value === 'green' ? '#e8f5e9' : '#1a1a1a'
+}))
+
+const brightnessMaskStyle = computed(() => ({
+  opacity: String(Math.min(0.8, Math.max(0, (100 - brightness.value) / 100)))
 }))
 
 const articleStyle = computed(() => ({
@@ -131,6 +136,8 @@ const changeTheme = (value) => {
 
 const toggleCatalog = () => {
   catalogVisible.value = !catalogVisible.value
+  // 每次打开目录都重新拉取一次，后台新发布的章节无需刷新页面即可看到
+  if (catalogVisible.value) loadChapterList()
 }
 
 const extractChapterList = (data) => {
@@ -404,6 +411,19 @@ watch(() => route.params.id, (id) => {
   min-height: calc(100vh - 120px);
   padding: 18px 18px 80px;
 }
+/*
+ * 亮度用遮罩实现，而不是给 .reader-page 加 filter：
+ * filter 会让 .reader-page 成为 fixed 子元素（工具栏、目录弹层）的包含块，
+ * 导致弹层按整篇文章的高度定位，滚动后目录跑到屏幕外变成一片空白。
+ */
+.brightness-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: #000;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
 .content-wrap {
   max-width: 480px;
   margin: 0 auto;
@@ -424,6 +444,7 @@ watch(() => route.params.id, (id) => {
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 3;
   padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
   background: rgba(255,255,255,0.95);
   border-top: 1px solid #eee;
