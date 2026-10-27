@@ -33,11 +33,18 @@
         <div class="section-head">
           <h3>热门推荐</h3>
         </div>
-        <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="loadRecommend">
+        <van-list
+          v-model:loading="loading"
+          v-model:error="recommendError"
+          :finished="finished"
+          error-text="加载失败，点击重试"
+          :finished-text="recommendBooks.length ? '没有更多了' : ''"
+          @load="loadRecommend"
+        >
           <div class="book-list">
             <BookCard v-for="book in recommendBooks" :key="book.id" :book="book" @click="$router.push(`/book-detail/${book.id}`)" />
           </div>
-          <div v-if="loading" class="loading-row"><van-loading size="20" /> <span>加载中...</span></div>
+          <div v-if="!loading && finished && !recommendError && !recommendBooks.length" class="empty-state">暂无推荐</div>
         </van-list>
       </div>
 
@@ -47,15 +54,16 @@
         </div>
         <van-list
           v-model:loading="newLoading"
+          v-model:error="newError"
           :finished="newFinished"
-          finished-text="没有更多了"
+          error-text="加载失败，点击重试"
+          :finished-text="newBooks.length ? '没有更多了' : ''"
           @load="loadNewBooks"
         >
           <div class="book-list">
             <BookCard v-for="book in newBooks" :key="book.id" :book="book" @click="$router.push(`/book-detail/${book.id}`)" />
           </div>
-          <div v-if="newLoading" class="loading-row"><van-loading size="20" /> <span>加载中...</span></div>
-          <div v-if="!newLoading && newFinished && !newBooks.length" class="empty-state">暂无新书</div>
+          <div v-if="!newLoading && newFinished && !newError && !newBooks.length" class="empty-state">暂无新书</div>
         </van-list>
       </div>
     </van-pull-refresh>
@@ -81,12 +89,25 @@ const recommendBooks = ref([])
 const newBooks = ref([])
 const newLoading = ref(false)
 const newFinished = ref(false)
+const recommendError = ref(false)
+const newError = ref(false)
 const loading = ref(false)
 const refreshing = ref(false)
 const finished = ref(false)
 const page = ref(0)
 const newPage = ref(0)
 const pageSize = 8
+
+// van-list 在触发 @load 之前就会把 loading 置为 true，
+// 所以不能再用 loading 做“请求中”的判断，否则会直接 return 且永远不回落。
+let recommendFetching = false
+let newFetching = false
+
+const normalizeList = (payload) => {
+  const books = Array.isArray(payload) ? payload : payload?.items || payload?.list || []
+  const total = Number(payload?.total)
+  return { books, total: Number.isFinite(total) ? total : null }
+}
 
 const openBanner = (banner) => {
   const target = String(banner.linkTarget || '').trim()
@@ -131,19 +152,26 @@ const loadCategories = async () => {
 }
 
 const loadRecommend = async () => {
-  if (loading.value || finished.value) return
+  if (recommendFetching || finished.value) {
+    loading.value = false
+    return
+  }
+  recommendFetching = true
   loading.value = true
+  recommendError.value = false
   const nextPage = page.value + 1
   try {
     const { data } = await getRecommendBooks(nextPage, pageSize)
-    const payload = data?.data || data
-    const books = Array.isArray(payload) ? payload : payload?.items || payload?.list || []
-    recommendBooks.value = nextPage === 1 ? books : [...recommendBooks.value, ...books]
+    const payload = data?.data ?? data
+    const { books, total } = normalizeList(payload)
+    const merged = nextPage === 1 ? books : [...recommendBooks.value, ...books]
+    recommendBooks.value = merged
     page.value = nextPage
-    finished.value = books.length < pageSize || payload?.hasMore === false
+    finished.value = books.length < pageSize || payload?.hasMore === false || (total !== null && merged.length >= total)
   } catch (error) {
-    finished.value = false
+    recommendError.value = true
   } finally {
+    recommendFetching = false
     loading.value = false
   }
 }
@@ -152,27 +180,36 @@ const refreshHome = async () => {
   page.value = 0
   finished.value = false
   recommendBooks.value = []
+  recommendError.value = false
   newPage.value = 0
   newFinished.value = false
   newBooks.value = []
-  await Promise.all([loadBanner(), loadRecommend(), loadNewBooks()])
+  newError.value = false
+  await Promise.all([loadBanner(), loadCategories(), loadRecommend(), loadNewBooks()])
   refreshing.value = false
 }
 
 const loadNewBooks = async () => {
-  if (newLoading.value || newFinished.value) return
+  if (newFetching || newFinished.value) {
+    newLoading.value = false
+    return
+  }
+  newFetching = true
   newLoading.value = true
+  newError.value = false
   const nextPage = newPage.value + 1
   try {
     const { data } = await getNewBooks(nextPage, pageSize)
-    const payload = data?.data || data
-    const books = Array.isArray(payload) ? payload : payload?.items || payload?.list || []
-    newBooks.value = nextPage === 1 ? books : [...newBooks.value, ...books]
+    const payload = data?.data ?? data
+    const { books, total } = normalizeList(payload)
+    const merged = nextPage === 1 ? books : [...newBooks.value, ...books]
+    newBooks.value = merged
     newPage.value = nextPage
-    newFinished.value = books.length < pageSize || payload?.hasMore === false
+    newFinished.value = books.length < pageSize || payload?.hasMore === false || (total !== null && merged.length >= total)
   } catch (error) {
-    newFinished.value = false
+    newError.value = true
   } finally {
+    newFetching = false
     newLoading.value = false
   }
 }
@@ -289,15 +326,6 @@ onMounted(() => {
     height: auto;
     aspect-ratio: 100 / 138;
   }
-}
-.loading-row {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  color: #999;
-  font-size: 12px;
 }
 @media (min-width: 768px) {
   .header {

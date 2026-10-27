@@ -19,9 +19,11 @@
         </div>
         <van-list
           v-model:loading="loading"
+          v-model:error="loadError"
           :finished="finished"
           :immediate-check="false"
           :finished-text="books.length ? '没有更多了' : ''"
+          error-text="加载失败，点击重试"
           @load="loadBooks"
         >
           <div v-if="books.length" class="book-grid">
@@ -51,6 +53,9 @@ const pageSize = 12
 const loading = ref(false)
 const refreshing = ref(false)
 const finished = ref(false)
+const loadError = ref(false)
+// van-list 触发 @load 前会把 loading 置为 true，不能再用 loading 判断“请求中”
+let fetching = false
 const activeCategoryName = computed(
   () => categories.value.find((item) => String(item.id) === String(activeId.value))?.name || '分类书籍'
 )
@@ -86,19 +91,29 @@ const loadCategories = async () => {
 }
 
 const loadBooks = async () => {
-  if (loading.value || finished.value || !activeId.value) return
+  if (fetching || finished.value || !activeId.value) {
+    loading.value = false
+    return
+  }
+  fetching = true
   loading.value = true
+  loadError.value = false
   const nextPage = page.value + 1
   try {
     const { data } = await getBooksByCategory(activeId.value, nextPage, pageSize)
-    const payload = data?.data || data
+    const payload = data?.data ?? data
     const items = Array.isArray(payload) ? payload : payload?.items || payload?.list || []
-    books.value = nextPage === 1 ? items : [...books.value, ...items]
+    const merged = nextPage === 1 ? items : [...books.value, ...items]
+    books.value = merged
     page.value = nextPage
-    finished.value = items.length < pageSize || payload?.hasMore === false
+    const total = Number(payload?.total)
+    finished.value = items.length < pageSize
+      || payload?.hasMore === false
+      || (Number.isFinite(total) && merged.length >= total)
   } catch (error) {
-    finished.value = false
+    loadError.value = true
   } finally {
+    fetching = false
     loading.value = false
   }
 }
@@ -109,6 +124,7 @@ const selectCategory = (id) => {
   page.value = 0
   books.value = []
   finished.value = false
+  loadError.value = false
   loadBooks()
 }
 
@@ -116,6 +132,7 @@ const refreshBooks = async () => {
   page.value = 0
   books.value = []
   finished.value = false
+  loadError.value = false
   await loadBooks()
   refreshing.value = false
 }

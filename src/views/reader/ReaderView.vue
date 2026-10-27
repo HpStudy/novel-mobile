@@ -43,8 +43,19 @@
 
     <van-popup v-model:show="catalogVisible" position="right" :style="{ width: '70%', height: '100%' }">
       <div class="catalog-panel">
-        <div class="catalog-header">目录</div>
-        <ul>
+        <div class="catalog-header">
+          <span>目录</span>
+          <span v-if="chapters.length" class="catalog-count">{{ chapters.length }} 章</span>
+        </div>
+        <div v-if="catalogLoading || (chapterLoading && !chapters.length)" class="catalog-tip">
+          <van-loading size="20" />
+          <span>目录加载中...</span>
+        </div>
+        <div v-else-if="catalogError" class="catalog-tip catalog-retry" @click="loadChapterList()">
+          目录加载失败，点击重试
+        </div>
+        <div v-else-if="!chapters.length" class="catalog-tip">暂无章节</div>
+        <ul v-else>
           <li v-for="item in chapters" :key="item.id" @click="jumpToChapter(item)">
             {{ item.title }} <span v-if="item.isVip || item.is_vip">VIP</span>
           </li>
@@ -71,9 +82,12 @@ const chapterTitle = ref('')
 const articleText = ref('')
 const chapterLoading = ref(false)
 const chapters = ref([])
+const catalogLoading = ref(false)
+const catalogError = ref(false)
 const currentChapterId = ref(route.params.id)
 const remoteProgress = ref(null)
-const bookId = computed(() => route.query.bookId || '')
+const resolvedBookId = ref('')
+const bookId = computed(() => String(route.query.bookId || resolvedBookId.value || ''))
 let saveTimer
 let initializing = true
 let skipRouteLoad = false
@@ -117,6 +131,26 @@ const changeTheme = (value) => {
 
 const toggleCatalog = () => {
   catalogVisible.value = !catalogVisible.value
+}
+
+const extractChapterList = (data) => {
+  const payload = data?.data ?? data
+  if (Array.isArray(payload)) return payload
+  return payload?.items || payload?.list || payload?.records || []
+}
+
+const loadChapterList = async (targetBookId = bookId.value) => {
+  if (!targetBookId) return
+  catalogLoading.value = true
+  catalogError.value = false
+  try {
+    const { data } = await getChapterList(targetBookId)
+    chapters.value = extractChapterList(data)
+  } catch (error) {
+    catalogError.value = true
+  } finally {
+    catalogLoading.value = false
+  }
 }
 
 const isVipChapter = (chapter) => Boolean(
@@ -234,12 +268,14 @@ const loadChapter = async (chapterId, { save = true } = {}) => {
   chapterTitle.value = chapters.value.find((chapter) => String(chapter.id) === String(chapterId))?.title || ''
   articleText.value = ''
   chapterLoading.value = true
+  let loadedBookId = ''
   try {
     const { data } = await getChapterDetail(chapterId)
     const responseData = data?.data || data
     const chapter = responseData?.chapter || responseData
     chapterTitle.value = chapter?.title || chapter?.name || chapterTitle.value
     articleText.value = chapter?.content || chapter?.text || articleText.value
+    loadedBookId = chapter?.bookId || chapter?.book_id || ''
   } catch (error) {
     articleText.value = ''
     if (error?.response?.status === 403 && bookId.value) {
@@ -256,6 +292,20 @@ const loadChapter = async (chapterId, { save = true } = {}) => {
     }
   } finally {
     chapterLoading.value = false
+  }
+  if (loadedBookId) {
+    try {
+      const bookChanged = String(loadedBookId) !== String(bookId.value)
+      resolvedBookId.value = String(loadedBookId)
+      if (bookChanged) chapters.value = []
+      if (bookChanged || !chapters.value.length) await loadChapterList(loadedBookId)
+      const routeBookId = String(route.query.bookId || '')
+      if (routeBookId !== String(loadedBookId)) {
+        await router.replace(chapterRoute(chapterId))
+      }
+    } catch (error) {
+      // The chapter remains readable even when the catalog or URL sync fails.
+    }
   }
   window.scrollTo({ top: 0, behavior: 'auto' })
   if (save) persistProgress()
@@ -279,15 +329,7 @@ const onTouchEnd = (event) => {
 }
 
 onMounted(async () => {
-  if (bookId.value) {
-    try {
-      const { data } = await getChapterList(bookId.value)
-      const payload = data?.data || data
-      chapters.value = Array.isArray(payload) ? payload : payload?.list || []
-    } catch (error) {
-      // The request interceptor reports the backend error.
-    }
-  }
+  if (bookId.value) await loadChapterList()
   const resumeChapterId = await restoreProgress(route.params.id)
   if (String(resumeChapterId) !== String(route.params.id)) {
     await router.replace(chapterRoute(resumeChapterId))
@@ -416,9 +458,30 @@ watch(() => route.params.id, (id) => {
 .catalog-panel {
   padding: 18px 14px;
   .catalog-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 10px;
+    .catalog-count {
+      font-size: 12px;
+      font-weight: 400;
+      color: #999;
+    }
+  }
+  .catalog-tip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 0;
+    font-size: 13px;
+    color: #999;
+    text-align: center;
+  }
+  .catalog-retry {
+    color: #e6432d;
   }
   ul {
     list-style: none;
